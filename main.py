@@ -1,8 +1,9 @@
 import gym
+from gym.envs.registration import register
 import numpy as np
 import random
+
 import matplotlib.pyplot as plt
-from gym.envs.registration import register
 
 
 def qGridPrint():
@@ -59,7 +60,7 @@ exploration_decay_rate = 0.001
 learning_rate = 0.2
 discount_rate = 0.99
 exploration_rate = 1.0
-rList = []
+episodeList = []
 episodeHistory = []
 
 desc = ["SFFF", "FHFH", "FFFF", "HFFG"] # Frozen Lake 상태, [S : 시작, H : Hole, G : Goal]
@@ -70,10 +71,10 @@ q_table = np.zeros([env.observation_space.n, env.action_space.n]) # Q Table을 �
 
 for i in range(num_episodes) : 
     state = env.reset()
-    rAll = 0
+    rewardAll = 0
     done = None
 
-    episodeAction =[]
+    # episodeAction =[]
     count = 0
     while not done : 
         # env.render()
@@ -86,32 +87,32 @@ for i in range(num_episodes) :
 
         new_state, reward, done, _ = env.step(action)        # 해당 Action을 했을 때 environment가 변하고, 새로운 state, reward, done 여부를 반환 받음
         
-        q_table[state, action] =q_table[state, action]* (1-learning_rate) \
-            + learning_rate*(reward + discount_rate * np.max(q_table[new_state, :]))
-        # q_table[state, action] = q_table[state, action] + \
-        #                         learning_rate * (reward + discount_rate * np.max(q_table[new_state]) - q_table[state, action])
+        # q_table[state, action] =q_table[state, action]* (1-learning_rate) \
+        #     + learning_rate*(reward + discount_rate * np.max(q_table[new_state, :]))
+        q_table[state, action] = q_table[state, action] + \
+                                learning_rate * (reward + discount_rate * np.max(q_table[new_state]) - q_table[state, action])
         
-        episodeAction.append(actionArrow[action])
+        # episodeAction.append(actionArrow[action])
         count +=1
         
-        if done & (new_state != 15):
-            episodeAction.clear()
+        # if done & (new_state != 15):
+        #     episodeAction.clear()
 
-        rAll += reward
+        rewardAll += reward
         state = new_state
-    if episodeAction != []:
-        episodeHistory.append(episodeAction)
+    # if episodeAction != []:
+    #     episodeHistory.append(episodeAction)
     # episodeHistory.append(episodeAction)
-    rList.append(rAll)
+    episodeList.append(rewardAll)
 
 
     ## exploation -
     exploration_rate -= exploration_decay_rate
 
 
-print("Episode History")
-print(episodeHistory)
-print("Success rate : "+str(sum(rList) / num_episodes))
+# print("Episode History")
+# print(episodeHistory)
+print("Success rate : "+str(sum(episodeList) / num_episodes))
 print("Final Q-Table Values")
 qGridPrint()
 # print(q_table)
@@ -121,30 +122,23 @@ qGridPrint()
 # plt.show()
 
 
-
-
-
-for episode in range(3):
-
+# Episode Done
+for episode in range(5):
     state = env.reset()
     done = False
-    print("*****에피소드 ", episode+1, "*****\n\n\n\n")
+
+    print("Episode_", episode+1)
     for step in range(num_episodes):
-        # 현재 상태를 그려 본다.
-        # clear_output(wait=True)
-        # print(env.render(mode="ansi"))
         env.render()
-        # 현재 상태에서의 q값(보상)이 가장 큰 action을 취한다.
+        # 현재 상태에서 가장 큰 Q_Value를 선택 -> action
         action = np.argmax(q_table[state, :]) 
-        # 새로운 action을 취한다
+        #action을 취한 후 -> 새로운 상태
         new_state, reward, done, info = env.step(action)
         if done:
             if reward == 1:
-                # 만약에 Goal에 도착하여 reward가 1이라면
-                print("****목표에 도달하였습니다.!****")
+                print("Goal!")
             else:
-                # Goal에 도달하지 못했다면
-                print("****Hole에 빠지고 말았습니다.****")
+                print("Hole....")
             break
        
         # 새로운 상태를 설정한다.
